@@ -52,18 +52,18 @@ def readcountries():
                 countries[countries.index(firstcontry)].addNeighbour(goalCounty)
             elif firstcontry in countries and goalCounty not in countries:
                 countries.append(goalCounty)
-                firstcontry.addNeighbour(goalCounty)
+                countries[countries.index(firstcontry)].addNeighbour(goalCounty)
             elif firstcontry not in countries and goalCounty in countries:
                 countries.append(firstcontry)
-                firstcontry.addNeighbour(goalCounty)
+                countries[countries.index(firstcontry)].addNeighbour(goalCounty)
             else:
                 countries.append(firstcontry)
                 countries.append(goalCounty)
-                firstcontry.addNeighbour(goalCounty)
+                countries[countries.index(firstcontry)].addNeighbour(goalCounty)
 
 
 def heuristic(neighbour, goal_locations):
-    return 1
+    return 0
 
 
 def a_star(starting_locations, goal_locations, detail_output):
@@ -86,6 +86,17 @@ def a_star(starting_locations, goal_locations, detail_output):
                 current_country = country
         frontier.remove(current_country)
         # check if the country is a goal country
+
+        # add the country to the explored set
+        explored.append(current_country)
+        # add the neighbours of the current country to the frontier
+        for neighbour in current_country.neighbours:
+            if neighbour not in explored and neighbour not in frontier:
+                frontier.append(neighbour)
+                neighbour.cost = current_country.cost + 1
+                neighbour.heuristic = heuristic(neighbour, goal_locations)
+                neighbour.parent = current_country
+
         if current_country in goal_locations:
             # print the path to the goal country
             path = []
@@ -99,15 +110,6 @@ def a_star(starting_locations, goal_locations, detail_output):
             pathes.append(path)
             if len(pathes) == len(starting_locations):
                 return pathes
-        # add the country to the explored set
-        explored.append(current_country)
-        # add the neighbours of the current country to the frontier
-        for neighbour in current_country.neighbours:
-            if neighbour not in explored and neighbour not in frontier:
-                frontier.append(neighbour)
-                neighbour.cost = current_country.cost + 1
-                neighbour.heuristic = heuristic(neighbour, goal_locations)
-                neighbour.parent = current_country
 
     print('No path found')
 
@@ -140,7 +142,8 @@ def find_path(starting_locations, goal_locations, search_method, detail_output )
 
     # search_method = 1: A* search
     if search_method == 1:
-        return a_star(starting_locations_blue, goal_locations_blue, detail_output), a_star(starting_locations_red, goal_locations_red, detail_output)
+        a_star(starting_locations_blue, goal_locations_blue, detail_output)
+        a_star(starting_locations_red, goal_locations_red, detail_output)
 
 def find_county(name, code):
     for county in countries:
