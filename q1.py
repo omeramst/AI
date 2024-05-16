@@ -61,10 +61,8 @@ def readcountries():
                 countries.append(goalCounty)
                 countries[countries.index(firstcontry)].addNeighbour(goalCounty)
 
-
 def heuristic(neighbour, goal_locations):
     return 0
-
 
 def a_star(starting_locations, goal_locations, detail_output):
     #a star algorithm for few starting locations
@@ -110,8 +108,8 @@ def a_star(starting_locations, goal_locations, detail_output):
             pathes.append(path)
             if len(pathes) == len(starting_locations):
                 return pathes
-
-    print('No path found')
+    # if the frontier is empty, then at list one path wasn't found
+    print(pathes.len() + ' paths found from ' + starting_locations.len() + ' starting locations')
 
 def find_path(starting_locations, goal_locations, search_method, detail_output ):
     # split the starting locations and goal locations by the party
@@ -137,7 +135,6 @@ def find_path(starting_locations, goal_locations, search_method, detail_output )
         name = goal_locations_red[i].split(',')[1].strip()
         code = goal_locations_red[i].split(',')[2].strip()
         goal_locations_red[i] = find_county(name, code)
-
 
 
     # search_method = 1: A* search
