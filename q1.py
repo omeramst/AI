@@ -6,9 +6,13 @@ frontier = []
 explored = []
 counties = []
 
+
+
 # main function
 def __main__():
+    # read the counties from the file
     readcounties()
+
 
 
 class County:
@@ -34,3 +38,5 @@ def readcounties():
             print(firstcounty)
             print(goalcounty)
 
+if __name__ == "__main__":
+    __main__()
