@@ -59,18 +59,16 @@ def setCordinateForCountries():
             else:
                 # if the country doesn't have cordinate in the csv file
                 url = f"https://nominatim.openstreetmap.org/search?q={country.name}%20{country.code}&format=json"
-                response = requests.get(url, headers=headers)
-                print(response.text)
-                if response.status_code == 200:
-                    data = response.json()
-                    if data:
-                        country.setCordinate(float(data[0]['lat']), float(data[0]['lon']))
-                        with open('countriesLatLan.csv', 'a') as file:
-                            file.write(country.name + ',' + country.code + ',' + str(country.lat) + ',' + str(country.lon) + '\n')
-                    else:
-                        print('no data in the request for ' + country.name + ' ' + country.code)
-                else:
-                    print('error in the request for ' + country.name + ' ' + country.code)
+                try:
+                    response = requests.get(url, headers=headers)
+                    if response.status_code == 200:
+                        data = response.json()
+                        if data:
+                            country.setCordinate(float(data[0]['lat']), float(data[0]['lon']))
+                            with open('countriesLatLan.csv', 'a') as file:
+                                file.write(country.name + ',' + country.code + ',' + str(country.lat) + ',' + str(country.lon) + '\n')
+                except:
+                    pass
 
 def readcountries():
     with open('adjacency.csv', 'r') as file:
