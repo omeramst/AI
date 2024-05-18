@@ -1,14 +1,12 @@
 # Description: this file will be a Executing file for the question 1,
 # which is Executing the A-star algorithm
-import networkx as nx
-import matplotlib.pyplot as plt
+import requests
 
 # variables
 countries = []
-starting_locations = {"Blue, Washington County, UT" , "Blue, Chicot County, AR", "Red, Fairfield County, CT" }
-goal_locations = {"Blue, San Diego County, CA" , "Blue, Bienville Parish, LA" ,
-"Red, Rensselaer County, NY"}
-
+starting_locations = {"Blue, Washington County, UT", "Blue, Chicot County, AR", "Red, Fairfield County, CT"}
+goal_locations = {"Blue, San Diego County, CA", "Blue, Bienville Parish, LA",
+                  "Red, Rensselaer County, NY"}
 
 
 # main function
@@ -17,8 +15,7 @@ def __main__():
     readcountries()
     # lets start the algorithm
     find_path(starting_locations, goal_locations, 1, True)
-    #
-    print('s')
+
 
 class County:
     def __init__(self, name, code):
@@ -28,16 +25,52 @@ class County:
         self.heuristic = 0
         self.cost = 0
         self.parent = None
+        self.lat = 0
+        self.lon = 0
 
     def addNeighbour(self, neighbour):
         if neighbour != self and neighbour not in self.neighbours:
-           self.neighbours.append(countries[countries.index(neighbour)])
+            self.neighbours.append(countries[countries.index(neighbour)])
 
     def __eq__(self, other):
         return self.name == other.name and self.code == other.code
 
     def __str__(self):
         return self.name + ' ' + self.code
+
+    def setCordinate(self, lat, lon):
+        self.lat = lat
+        self.lon = lon
+
+
+
+def setCordinateForCountries():
+    headers = {
+        'User-Agent': 'Omer Ai 1.0',
+        'From': 'omeramst@post.bgu.ac.il'
+    }
+    for country in countries:
+        # check if the country already have cordinate in the csv file
+        with open('countriesLatLan.csv', 'r') as read_file:
+            for line in read_file:
+                if country.name in line and country.code in line:
+                    country.setCordinate(float(line.split(',')[2]), float(line.split(',')[3]))
+                    break
+            else:
+                # if the country doesn't have cordinate in the csv file
+                url = f"https://nominatim.openstreetmap.org/search?q={country.name}%20{country.code}&format=json"
+                response = requests.get(url, headers=headers)
+                print(response.text)
+                if response.status_code == 200:
+                    data = response.json()
+                    if data:
+                        country.setCordinate(float(data[0]['lat']), float(data[0]['lon']))
+                        with open('countriesLatLan.csv', 'a') as file:
+                            file.write(country.name + ',' + country.code + ',' + str(country.lat) + ',' + str(country.lon) + '\n')
+                    else:
+                        print('no data in the request for ' + country.name + ' ' + country.code)
+                else:
+                    print('error in the request for ' + country.name + ' ' + country.code)
 
 def readcountries():
     with open('adjacency.csv', 'r') as file:
@@ -60,12 +93,27 @@ def readcountries():
                 countries.append(firstcontry)
                 countries.append(goalCounty)
                 countries[countries.index(firstcontry)].addNeighbour(goalCounty)
+    setCordinateForCountries()
+
 
 def heuristic(neighbour, goal_locations):
-    return 0
+    # return the heuristic value for the neighbour
+    # the heuristic value is the distance between the neighbour and the closest goal location
+    min_distance = 100000000000000000000000
+    for goal in goal_locations:
+        # Manhattan distance
+        distance = abs(neighbour.lat - goal.lat) + abs(neighbour.lon - goal.lon)
+        if distance < min_distance:
+            min_distance = distance
+    return min_distance
+
+
+# return the heuristic value for the neighbour
+# the heuristic value is the distance between the neighbour and the closest goal location
+
 
 def a_star(starting_locations, goal_locations, detail_output):
-    #a star algorithm for few starting locations
+    # a star algorithm for few starting locations
     # initialize the frontier with the starting countries
     frontier = []
     explored = []
@@ -111,14 +159,15 @@ def a_star(starting_locations, goal_locations, detail_output):
     # if the frontier is empty, then at list one path wasn't found
     print(pathes.len() + ' paths found from ' + starting_locations.len() + ' starting locations')
 
-def find_path(starting_locations, goal_locations, search_method, detail_output ):
+
+def find_path(starting_locations, goal_locations, search_method, detail_output):
     # split the starting locations and goal locations by the party
     starting_locations_blue = [x for x in starting_locations if x.split(',')[0].strip() == 'Blue']
     starting_locations_red = [x for x in starting_locations if x.split(',')[0].strip() == 'Red']
     goal_locations_blue = [x for x in goal_locations if x.split(',')[0].strip() == 'Blue']
     goal_locations_red = [x for x in goal_locations if x.split(',')[0].strip() == 'Red']
-    #changing the locations to be in a form of country class
-    #from the countries list
+    # changing the locations to be in a form of country class
+    # from the countries list
     for i in range(len(starting_locations_blue)):
         name = starting_locations_blue[i].split(',')[1].strip()
         code = starting_locations_blue[i].split(',')[2].strip()
@@ -136,17 +185,18 @@ def find_path(starting_locations, goal_locations, search_method, detail_output )
         code = goal_locations_red[i].split(',')[2].strip()
         goal_locations_red[i] = find_county(name, code)
 
-
     # search_method = 1: A* search
     if search_method == 1:
         a_star(starting_locations_blue, goal_locations_blue, detail_output)
         a_star(starting_locations_red, goal_locations_red, detail_output)
+
 
 def find_county(name, code):
     for county in countries:
         if county.name == name and county.code == code:
             return county
     return None
+
 
 if __name__ == "__main__":
     __main__()
