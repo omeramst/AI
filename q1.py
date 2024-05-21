@@ -2,7 +2,8 @@
 # which is Executing the A-star algorithm
 import requests
 
-# variables
+# variables for the program
+"""please change the starting locations and goal locations to test the program with different locations"""
 countries = []
 starting_locations = {"Blue, Washington County, UT", "Blue, Chicot County, AR", "Red, Fairfield County, CT"}
 goal_locations = {"Blue, San Diego County, CA", "Blue, Bienville Parish, LA",
@@ -16,8 +17,9 @@ def __main__():
     # lets start the algorithm
     find_path(starting_locations, goal_locations, 1, True)
 
-
+# class for the country with the name, code, neighbours, heuristic, cost, parent, lat, lon
 class County:
+    # constructor for the country
     def __init__(self, name, code):
         self.name = name
         self.code = code
@@ -28,33 +30,40 @@ class County:
         self.lat = 0
         self.lon = 0
 
+    # add neighbour to the country
     def addNeighbour(self, neighbour):
         if neighbour != self and neighbour not in self.neighbours:
             self.neighbours.append(countries[countries.index(neighbour)])
 
+    # check if the country is equal to another country by the name and code
     def __eq__(self, other):
         return self.name == other.name and self.code == other.code
 
+    # return the string of the country with the name and code
     def __str__(self):
         return self.name + ' ' + self.code
 
+    # set the cordinate for the country with the lat and lon values for later use (huersitic)
     def setCordinate(self, lat, lon):
         self.lat = lat
         self.lon = lon
 
-
+# set the cordinate for the countries from the csv file or from the api if the country doesn't have cordinate in the csv file
+#csv file is used to save the cordinate for the countries to avoid using the api for the same country again due to time complexity
+#csv file is like a local cache for the cordinate of the countries
 def setCordinateForCountries():
     headers = {
         'User-Agent': 'Omer Ai 1.0',
         'From': 'omeramst@post.bgu.ac.il'
     }
     for country in countries:
-        # check if the country already have cordinate in the csv file
+        # check if the country already have cordinate in the csv file (local cache)
         with open('countriesLatLan.csv', 'r') as read_file:
             for line in read_file:
                 if country.name in line and country.code in line:
                     country.setCordinate(float(line.split(',')[2]), float(line.split(',')[3]))
                     break
+            # if the country doesn't have cordinate in the csv file (local cache) then get it from the api
             else:
                 # if the country doesn't have cordinate in the csv file
                 url = f"https://nominatim.openstreetmap.org/search?q={country.name}%20{country.code}&format=json"
@@ -62,6 +71,7 @@ def setCordinateForCountries():
                     response = requests.get(url, headers=headers)
                     if response.status_code == 200:
                         data = response.json()
+                        # if the data is not empty then set the cordinate for the country and save it in the csv file (local cache)
                         if data:
                             country.setCordinate(float(data[0]['lat']), float(data[0]['lon']))
                             with open('countriesLatLan.csv', 'a') as file:
@@ -70,7 +80,7 @@ def setCordinateForCountries():
                 except:
                     pass
 
-
+# read the countries from the csv file, create the countries and add the neighbours to the countries
 def readcountries():
     with open('adjacency.csv', 'r') as file:
         for line in file:
@@ -92,6 +102,7 @@ def readcountries():
                 countries.append(firstcontry)
                 countries.append(goalCounty)
                 countries[countries.index(firstcontry)].addNeighbour(goalCounty)
+    # set the cordinate for the countries
     setCordinateForCountries()
 
 
@@ -106,17 +117,13 @@ def heuristic(neighbour, goal_locations):
             min_distance = distance
     return min_distance
 
-
-# return the heuristic value for the neighbour
-# the heuristic value is the distance between the neighbour and the closest goal location
-
-
+# a star algorithm for few starting locations and goal locations
 def a_star(starting_locations, goal_locations, detail_output):
-    # a star algorithm for few starting locations
-    # initialize the frontier with the starting countries
+    # initialize the frontier and explored sets
     frontier = []
     explored = []
     pathes = []
+    # add the starting locations to the frontier
     for country in starting_locations:
         frontier.append(country)
         country.cost = 0
@@ -130,7 +137,6 @@ def a_star(starting_locations, goal_locations, detail_output):
             if country.cost + country.heuristic < current_country.cost + current_country.heuristic:
                 current_country = country
         frontier.remove(current_country)
-        # check if the country is a goal country
 
         # add the country to the explored set
         explored.append(current_country)
@@ -142,27 +148,30 @@ def a_star(starting_locations, goal_locations, detail_output):
                 neighbour.heuristic = heuristic(neighbour, goal_locations)
                 neighbour.parent = current_country
 
+        # check if the current country is in the goal locations
         if current_country in goal_locations:
-            # print the path to the goal country
+            # get the path from the current country to the starting location and add it to the pathes list
             path = []
             while current_country:
                 path.insert(0, current_country)
                 current_country = current_country.parent
             pathes.append(path)
+            # if the pathes length is equal to the starting locations length then return the pathes
             if len(pathes) == len(starting_locations):
                 return pathes
+
     # if the frontier is empty, then at list one path wasn't found
     return pathes
 
-
+# find the path for the starting locations and goal locations using the search method and print the pathes
 def find_path(starting_locations, goal_locations, search_method, detail_output):
     # split the starting locations and goal locations by the party
     starting_locations_blue = [x for x in starting_locations if x.split(',')[0].strip() == 'Blue']
     starting_locations_red = [x for x in starting_locations if x.split(',')[0].strip() == 'Red']
     goal_locations_blue = [x for x in goal_locations if x.split(',')[0].strip() == 'Blue']
     goal_locations_red = [x for x in goal_locations if x.split(',')[0].strip() == 'Red']
-    # changing the locations to be in a form of country class
-    # from the countries list
+
+    # changing the locations to be in a form of country class from the countries list
     for i in range(len(starting_locations_blue)):
         name = starting_locations_blue[i].split(',')[1].strip()
         code = starting_locations_blue[i].split(',')[2].strip()
@@ -182,11 +191,13 @@ def find_path(starting_locations, goal_locations, search_method, detail_output):
 
     # search_method = 1: A* search
     if search_method == 1:
+        # get the pathes for the blue and red starting locations and goal locations
         bluePaths = a_star(starting_locations_blue, goal_locations_blue, detail_output)
         redPaths = a_star(starting_locations_red, goal_locations_red, detail_output)
+        # print the pathes
         pathsPrints(bluePaths, redPaths, detail_output)
 
-
+# print the pathes
 def pathsPrints(bluePaths, redPaths, detail_output):
     # Get the maximum length of the paths
     max_len_bluePaths = max(len(path) for path in bluePaths)
@@ -254,7 +265,7 @@ def pathsPrints(bluePaths, redPaths, detail_output):
             if detail_output and i == 1:
                 print("Heuristic: " + HeuristicStr)
 
-
+# find the country by the name and code from the countries list
 def find_county(name, code):
     for county in countries:
         if county.name == name and county.code == code:
