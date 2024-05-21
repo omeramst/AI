@@ -43,7 +43,6 @@ class County:
         self.lon = lon
 
 
-
 def setCordinateForCountries():
     headers = {
         'User-Agent': 'Omer Ai 1.0',
@@ -66,9 +65,11 @@ def setCordinateForCountries():
                         if data:
                             country.setCordinate(float(data[0]['lat']), float(data[0]['lon']))
                             with open('countriesLatLan.csv', 'a') as file:
-                                file.write(country.name + ',' + country.code + ',' + str(country.lat) + ',' + str(country.lon) + '\n')
+                                file.write(country.name + ',' + country.code + ',' + str(country.lat) + ',' + str(
+                                    country.lon) + '\n')
                 except:
                     pass
+
 
 def readcountries():
     with open('adjacency.csv', 'r') as file:
@@ -99,8 +100,8 @@ def heuristic(neighbour, goal_locations):
     # the heuristic value is the distance between the neighbour and the closest goal location
     min_distance = 100000000000000000000000
     for goal in goal_locations:
-        # Manhattan distance
-        distance = abs(neighbour.lat - goal.lat) + abs(neighbour.lon - goal.lon)
+        # euclidean distance
+        distance = ((neighbour.lat - goal.lat) ** 2 + (neighbour.lon - goal.lon) ** 2) ** 0.5
         if distance < min_distance:
             min_distance = distance
     return min_distance
@@ -147,15 +148,11 @@ def a_star(starting_locations, goal_locations, detail_output):
             while current_country:
                 path.insert(0, current_country)
                 current_country = current_country.parent
-            if detail_output:
-                print('Path found:')
-                for country in path:
-                    print(country.name, country.code)
             pathes.append(path)
             if len(pathes) == len(starting_locations):
                 return pathes
     # if the frontier is empty, then at list one path wasn't found
-    print(pathes.len() + ' paths found from ' + starting_locations.len() + ' starting locations')
+    return pathes
 
 
 def find_path(starting_locations, goal_locations, search_method, detail_output):
@@ -185,8 +182,77 @@ def find_path(starting_locations, goal_locations, search_method, detail_output):
 
     # search_method = 1: A* search
     if search_method == 1:
-        a_star(starting_locations_blue, goal_locations_blue, detail_output)
-        a_star(starting_locations_red, goal_locations_red, detail_output)
+        bluePaths = a_star(starting_locations_blue, goal_locations_blue, detail_output)
+        redPaths = a_star(starting_locations_red, goal_locations_red, detail_output)
+        pathsPrints(bluePaths, redPaths, detail_output)
+
+
+def pathsPrints(bluePaths, redPaths, detail_output):
+    # Get the maximum length of the paths
+    max_len_bluePaths = max(len(path) for path in bluePaths)
+    max_len_redPaths = max(len(path) for path in redPaths)
+    max_length = max(max_len_bluePaths, max_len_redPaths)
+
+    if not detail_output:
+        # Print the paths
+        for i in range(max_length):
+            # Initialize the string for the paths
+            PathStr = "{"
+
+            # Add the counties to the string
+            for path in bluePaths:
+                if i < len(path):
+                    PathStr += path[i].name + ", " + path[i].code + " (B) ; "
+                else:
+                    PathStr += path[-1].name + ", " + path[-1].code + " (B) ; "
+            for path in redPaths:
+                if i < len(path):
+                    PathStr += path[i].name + ", " + path[i].code + " (R) ; "
+                else:
+                    PathStr += path[-1].name + ", " + path[-1].code + " (R) ; "
+
+            # Remove the last semicolon and space from the string
+            PathStr = PathStr[:-3] + "}"
+
+            # Print the string
+            print(PathStr)
+    else:
+        # Initialize the string for the paths
+        PathStr = "{"
+        HeuristicStr = "{"
+        #add the heuristic values to the string
+        for path in bluePaths:
+            HeuristicStr += str(path[1].heuristic) + " ; "
+        for path in redPaths:
+            HeuristicStr += str(path[1].heuristic) + " ; "
+
+
+        # Print the paths
+        for i in range(max_length):
+            # Initialize the string for the paths
+            PathStr = "{"
+
+            # Add the counties to the string
+            for path in bluePaths:
+                if i < len(path):
+                    PathStr += path[i].name + ", " + path[i].code + " (B) ; "
+                else:
+                    PathStr += path[-1].name + ", " + path[-1].code + " (B) ; "
+            for path in redPaths:
+                if i < len(path):
+                    PathStr += path[i].name + ", " + path[i].code + " (R) ; "
+                else:
+                    PathStr += path[-1].name + ", " + path[-1].code + " (R) ; "
+
+
+            # Remove the last semicolon and space from the strings
+            PathStr = PathStr[:-3] + "}"
+            HeuristicStr = HeuristicStr[:-3] + "}"
+
+            # Print the strings
+            print(PathStr)
+            if detail_output and i == 1:
+                print("Heuristic: " + HeuristicStr)
 
 
 def find_county(name, code):
