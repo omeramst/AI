@@ -100,8 +100,8 @@ def heuristic(neighbour, goal_locations):
     # the heuristic value is the distance between the neighbour and the closest goal location
     min_distance = 100000000000000000000000
     for goal in goal_locations:
-        # euclidean distance
-        distance = ((neighbour.lat - goal.lat) ** 2 + (neighbour.lon - goal.lon) ** 2) ** 0.5
+        #manhattan distance
+        distance = abs(neighbour.lat - goal.lat) + abs(neighbour.lon - goal.lon)
         if distance < min_distance:
             min_distance = distance
     return min_distance
