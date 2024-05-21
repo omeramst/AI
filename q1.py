@@ -5,9 +5,9 @@ import requests
 # variables for the program
 """please change the starting locations and goal locations to test the program with different locations"""
 countries = []
-starting_locations = {"Blue, Washington County, UT", "Blue, Chicot County, AR", "Red, Fairfield County, CT"}
-goal_locations = {"Blue, San Diego County, CA", "Blue, Bienville Parish, LA",
-                  "Red, Rensselaer County, NY"}
+starting_locations = ["Blue, Washington County, UT", "Blue, Chicot County, AR", "Red, Fairfield County, CT"]
+goal_locations = ["Blue, San Diego County, CA", "Blue, Bienville Parish, LA",
+                  "Red, Rensselaer County, NY"]
 
 
 # main function
@@ -118,7 +118,7 @@ def heuristic(neighbour, goal_locations):
     return min_distance
 
 # a star algorithm for few starting locations and goal locations
-def a_star(starting_locations, goal_locations, detail_output):
+def a_star(starting_locations, goal_locations):
     # initialize the frontier and explored sets
     frontier = []
     explored = []
@@ -192,8 +192,8 @@ def find_path(starting_locations, goal_locations, search_method, detail_output):
     # search_method = 1: A* search
     if search_method == 1:
         # get the pathes for the blue and red starting locations and goal locations
-        bluePaths = a_star(starting_locations_blue, goal_locations_blue, detail_output)
-        redPaths = a_star(starting_locations_red, goal_locations_red, detail_output)
+        bluePaths = a_star(starting_locations_blue, goal_locations_blue)
+        redPaths = a_star(starting_locations_red, goal_locations_red)
         # print the pathes
         pathsPrints(bluePaths, redPaths, detail_output)
 
