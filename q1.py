@@ -4,23 +4,23 @@ import requests
 
 # variables for the program
 """please change the starting locations and goal locations to test the program with different locations"""
-countries = []
+counties = []
 starting_locations = ["Blue, Washington County, UT", "Blue, Chicot County, AR", "Red, Fairfield County, CT"]
-goal_locations = ["Blue, San Diego County, CA", "Blue, Bienville Parish, LA",
+goal_locations = ["Blue, San Diego County, CA", "Blue, San Diego County, CA",
                   "Red, Rensselaer County, NY"]
 
 
 # main function
 def __main__():
-    # read the countries from the file
-    readcountries()
+    # read the counties from the file
+    readcounties()
     # lets start the algorithm
     find_path(starting_locations, goal_locations, 1, True)
 
 
-# class for the country with the name, code, neighbours, heuristic, cost, parent, lat, lon
+# class for the county with the name, code, neighbours, heuristic, cost, parent, lat, lon
 class County:
-    # constructor for the country
+    # constructor for the county
     def __init__(self, name, code):
         self.name = name
         self.code = code
@@ -31,57 +31,57 @@ class County:
         self.lat = 0
         self.lon = 0
 
-    # add neighbour to the country
+    # add neighbour to the county
     def addNeighbour(self, neighbour):
         if neighbour != self and neighbour not in self.neighbours:
-            self.neighbours.append(countries[countries.index(neighbour)])
+            self.neighbours.append(counties[counties.index(neighbour)])
 
-    # check if the country is equal to another country by the name and code
+    # check if the county is equal to another county by the name and code
     def __eq__(self, other):
         return self.name == other.name and self.code == other.code
 
-    # return the string of the country with the name and code
+    # return the string of the county with the name and code
     def __str__(self):
         return self.name + ' ' + self.code
 
-    # set the cordinate for the country with the lat and lon values for later use (huersitic)
+    # set the cordinate for the county with the lat and lon values for later use (huersitic)
     def setCordinate(self, lat, lon):
         self.lat = lat
         self.lon = lon
 
 
-# set the cordinate for the countries from the countiesLatLen list or from the api if the country doesn't have cordinate in the countiesLatLen list
-# countiesLatLen list is used to save the cordinate for the countries to avoid using the api for the same country again due to time complexity
-# countiesLatLen list is like a local cache for the cordinate of the countries
-def setCordinateForCountries():
-    for country in countries:
-        # check if the country already have cordinate in the countiesLatLen list
+# set the cordinate for the counties from the countiesLatLen list or from the api if the county doesn't have cordinate in the countiesLatLen list
+# countiesLatLen list is used to save the cordinate for the counties to avoid using the api for the same county again due to time complexity
+# countiesLatLen list is like a local cache for the cordinate of the counties
+def setCordinateForcounties():
+    for county in counties:
+        # check if the county already have cordinate in the countiesLatLen list
         for line in countiesLatLen:
-            if country.name in line and country.code in line:
-                country.setCordinate(float(line.split(',')[2]), float(line.split(',')[3]))
+            if county.name in line and county.code in line:
+                county.setCordinate(float(line.split(',')[2]), float(line.split(',')[3]))
                 break
-        # if the country doesn't have cordinate in the countiesLatLen list then get it from the api
+        # if the county doesn't have cordinate in the countiesLatLen list then get it from the api
         else:
             headers = {
                 'User-Agent': 'Omer Ai 1.0',
                 'From': 'omeramst@post.bgu.ac.il'
             }
-            url = f"https://nominatim.openstreetmap.org/search?q={country.name}%20{country.code}&format=json"
+            url = f"https://nominatim.openstreetmap.org/search?q={county.name}%20{county.code}&format=json"
             try:
                 response = requests.get(url, headers=headers)
                 if response.status_code == 200:
                     data = response.json()
-                    # if the data is not empty then set the cordinate for the country and save it in the countiesLatLen list (local cache)
+                    # if the data is not empty then set the cordinate for the county and save it in the countiesLatLen list (local cache)
                     if data:
-                        country.setCordinate(float(data[0]['lat']), float(data[0]['lon']))
-                        countiesLatLen.append(country.name + ',' + country.code + ',' + str(country.lat) + ',' + str(
-                            country.lon))
+                        county.setCordinate(float(data[0]['lat']), float(data[0]['lon']))
+                        countiesLatLen.append(county.name + ',' + county.code + ',' + str(county.lat) + ',' + str(
+                            county.lon))
             except:
                 pass
 
 
-# read the countries from the countiesLatLen list, create the countries and add the neighbours to the countries
-def readcountries():
+# read the counties from the countiesLatLen list, create the counties and add the neighbours to the counties
+def readcounties():
     with open('adjacency.csv', 'r') as file:
         for line in file:
             firstCountyName = line.split(',')[0].split('"')[1]
@@ -90,20 +90,20 @@ def readcountries():
             goalCountyCode = line.split(',')[3].split('"')[0].split(' ')[1]
             firstcontry = County(firstCountyName, firstCountyCode)
             goalCounty = County(goalCountyName, goalCountyCode)
-            if firstcontry in countries and goalCounty in countries:
-                countries[countries.index(firstcontry)].addNeighbour(goalCounty)
-            elif firstcontry in countries and goalCounty not in countries:
-                countries.append(goalCounty)
-                countries[countries.index(firstcontry)].addNeighbour(goalCounty)
-            elif firstcontry not in countries and goalCounty in countries:
-                countries.append(firstcontry)
-                countries[countries.index(firstcontry)].addNeighbour(goalCounty)
+            if firstcontry in counties and goalCounty in counties:
+                counties[counties.index(firstcontry)].addNeighbour(goalCounty)
+            elif firstcontry in counties and goalCounty not in counties:
+                counties.append(goalCounty)
+                counties[counties.index(firstcontry)].addNeighbour(goalCounty)
+            elif firstcontry not in counties and goalCounty in counties:
+                counties.append(firstcontry)
+                counties[counties.index(firstcontry)].addNeighbour(goalCounty)
             else:
-                countries.append(firstcontry)
-                countries.append(goalCounty)
-                countries[countries.index(firstcontry)].addNeighbour(goalCounty)
-    # set the cordinate for the countries
-    setCordinateForCountries()
+                counties.append(firstcontry)
+                counties.append(goalCounty)
+                counties[counties.index(firstcontry)].addNeighbour(goalCounty)
+    # set the cordinate for the counties
+    setCordinateForcounties()
 
 
 def heuristic(neighbour, goal_locations):
@@ -125,37 +125,37 @@ def a_star(starting_locations, goal_locations):
     explored = []
     pathes = []
     # add the starting locations to the frontier
-    for country in starting_locations:
-        frontier.append(country)
-        country.cost = 0
-        country.heuristic = 0
-        country.parent = None
+    for county in starting_locations:
+        frontier.append(county)
+        county.cost = 0
+        county.heuristic = 0
+        county.parent = None
     # loop until the frontier is empty
     while frontier:
-        # get the country with the lowest cost
-        current_country = frontier[0]
-        for country in frontier:
-            if country.cost + country.heuristic < current_country.cost + current_country.heuristic:
-                current_country = country
-        frontier.remove(current_country)
+        # get the county with the lowest cost
+        current_county = frontier[0]
+        for county in frontier:
+            if county.cost + county.heuristic < current_county.cost + current_county.heuristic:
+                current_county = county
+        frontier.remove(current_county)
 
-        # add the country to the explored set
-        explored.append(current_country)
-        # add the neighbours of the current country to the frontier
-        for neighbour in current_country.neighbours:
+        # add the county to the explored set
+        explored.append(current_county)
+        # add the neighbours of the current county to the frontier
+        for neighbour in current_county.neighbours:
             if neighbour not in explored and neighbour not in frontier:
                 frontier.append(neighbour)
-                neighbour.cost = current_country.cost + 1
+                neighbour.cost = current_county.cost + 1
                 neighbour.heuristic = heuristic(neighbour, goal_locations)
-                neighbour.parent = current_country
+                neighbour.parent = current_county
 
-        # check if the current country is in the goal locations
-        if current_country in goal_locations:
-            # get the path from the current country to the starting location and add it to the pathes list
+        # check if the current county is in the goal locations
+        if current_county in goal_locations:
+            # get the path from the current county to the starting location and add it to the pathes list
             path = []
-            while current_country:
-                path.insert(0, current_country)
-                current_country = current_country.parent
+            while current_county:
+                path.insert(0, current_county)
+                current_county = current_county.parent
             pathes.append(path)
             # if the pathes length is equal to the starting locations length then return the pathes
             if len(pathes) == len(starting_locations):
@@ -173,7 +173,7 @@ def find_path(starting_locations, goal_locations, search_method, detail_output):
     goal_locations_blue = [x for x in goal_locations if x.split(',')[0].strip() == 'Blue']
     goal_locations_red = [x for x in goal_locations if x.split(',')[0].strip() == 'Red']
 
-    # changing the locations to be in a form of country class from the countries list
+    # changing the locations to be in a form of county class from the counties list
     for i in range(len(starting_locations_blue)):
         name = starting_locations_blue[i].split(',')[1].strip()
         code = starting_locations_blue[i].split(',')[2].strip()
@@ -219,11 +219,19 @@ def pathsPrints(bluePaths, redPaths, detail_output):
                     PathStr += path[i].name + ", " + path[i].code + " (B) ; "
                 else:
                     PathStr += path[-1].name + ", " + path[-1].code + " (B) ; "
+
             for path in redPaths:
                 if i < len(path):
                     PathStr += path[i].name + ", " + path[i].code + " (R) ; "
                 else:
                     PathStr += path[-1].name + ", " + path[-1].code + " (R) ; "
+
+
+            if len(starting_locations) != len(bluePaths) + len(redPaths):
+                how_many = len(starting_locations) - (len(bluePaths) + len(redPaths))
+                #add the empty pathes "no path found" to the string
+                for k in range(how_many):
+                    PathStr += "No path found ; "
 
             # Remove the last semicolon and space from the string
             PathStr = PathStr[:-3] + "}"
@@ -257,6 +265,13 @@ def pathsPrints(bluePaths, redPaths, detail_output):
                 else:
                     PathStr += path[-1].name + ", " + path[-1].code + " (R) ; "
 
+
+            if len(starting_locations) != len(bluePaths) + len(redPaths):
+                how_many = len(starting_locations) - (len(bluePaths) + len(redPaths))
+                #add the empty pathes "no path found" to the string
+                for k in range(how_many):
+                    PathStr += "No path found ; "
+
             # Remove the last semicolon and space from the strings
             PathStr = PathStr[:-3] + "}"
             HeuristicStr = HeuristicStr[:-3] + "}"
@@ -267,13 +282,13 @@ def pathsPrints(bluePaths, redPaths, detail_output):
                 print("Heuristic: " + HeuristicStr)
 
 
-# find the country by the name and code from the countries list
+# find the county by the name and code from the counties list
 def find_county(name, code):
-    for county in countries:
+    for county in counties:
         if county.name == name and county.code == code:
             return county
     return print(
-        "Country not found, please enter a valid country in the goal/starting locations and run the program again"), print(
+        "county not found, please enter a valid county in the goal/starting locations and run the program again"), print(
         'use this convention for example: ["Blue, Washington Countyss, UT", "Blue, Chicot County, AR", "Red, Fairfield County, CT"]'), exit(
         1)
 
