@@ -6,7 +6,7 @@ import requests
 """please change the starting locations and goal locations to test the program with different locations"""
 counties = []
 starting_locations = ["Blue, Washington County, UT", "Blue, Chicot County, AR", "Red, Fairfield County, CT"]
-goal_locations = ["Blue, San Diego County, CA", "Blue, San Diego County, CA",
+goal_locations = ["Blue, San Diego County, CA", "Blue, Bienville Parish, LA",
                   "Red, Rensselaer County, NY"]
 
 
