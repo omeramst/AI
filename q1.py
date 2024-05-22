@@ -14,6 +14,8 @@ goal_locations = ["Blue, San Diego County, CA", "Blue, Bienville Parish, LA",
 def __main__():
     # read the counties from the file
     readcounties()
+    # find the max distance between the counties
+    print("Max distance between the counties: ", findMaxdistance())
     # lets start the algorithm
     find_path(starting_locations, goal_locations, 1, True)
 
@@ -145,7 +147,9 @@ def a_star(starting_locations, goal_locations):
         for neighbour in current_county.neighbours:
             if neighbour not in explored and neighbour not in frontier:
                 frontier.append(neighbour)
-                neighbour.cost = current_county.cost + 1
+                # when checked the max distance between the counties (using findMaxdistance), the max distance was 356 so I used it as the cost between the counties
+                # that will make sure that the huristic is admissible!
+                neighbour.cost = current_county.cost + 356
                 neighbour.heuristic = heuristic(neighbour, goal_locations)
                 neighbour.parent = current_county
 
@@ -292,6 +296,14 @@ def find_county(name, code):
         'use this convention for example: ["Blue, Washington Countyss, UT", "Blue, Chicot County, AR", "Red, Fairfield County, CT"]'), exit(
         1)
 
+def findMaxdistance():
+    max_distance = 0
+    for county in counties:
+        for county1 in counties:
+            distance = ((county.lat - county1.lat) ** 2 + (county.lon - county1.lon) ** 2) ** 0.5
+            if distance > max_distance:
+                max_distance = distance
+    return max_distance
 
 countiesLatLen = ["Autauga County,AL,32.5165255,-86.6319403",
                   "Chilton County,AL,32.8522565,-86.7032845",
