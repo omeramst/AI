@@ -230,10 +230,9 @@ def pathsPrints(bluePaths, redPaths, detail_output):
                 else:
                     PathStr += path[-1].name + ", " + path[-1].code + " (R) ; "
 
-
             if len(starting_locations) != len(bluePaths) + len(redPaths):
                 how_many = len(starting_locations) - (len(bluePaths) + len(redPaths))
-                #add the empty pathes "no path found" to the string
+                # add the empty pathes "no path found" to the string
                 for k in range(how_many):
                     PathStr += "No path found ; "
 
@@ -269,10 +268,9 @@ def pathsPrints(bluePaths, redPaths, detail_output):
                 else:
                     PathStr += path[-1].name + ", " + path[-1].code + " (R) ; "
 
-
             if len(starting_locations) != len(bluePaths) + len(redPaths):
                 how_many = len(starting_locations) - (len(bluePaths) + len(redPaths))
-                #add the empty pathes "no path found" to the string
+                # add the empty pathes "no path found" to the string
                 for k in range(how_many):
                     PathStr += "No path found ; "
 
@@ -296,6 +294,7 @@ def find_county(name, code):
         'use this convention for example: ["Blue, Washington Countyss, UT", "Blue, Chicot County, AR", "Red, Fairfield County, CT"]'), exit(
         1)
 
+
 def findMaxdistance():
     max_distance = 0
     for county in counties:
@@ -304,6 +303,7 @@ def findMaxdistance():
             if distance > max_distance:
                 max_distance = distance
     return max_distance
+
 
 countiesLatLen = ["Autauga County,AL,32.5165255,-86.6319403",
                   "Chilton County,AL,32.8522565,-86.7032845",
