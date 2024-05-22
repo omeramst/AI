@@ -1,5 +1,11 @@
-# Description: this file will be a Executing file for the question 1,
-# which is Executing the A-star algorithm
+"""
+Description: this file will be a Executing file for the question 1,
+which is Executing the A-star algorithm
+please make sure that the adjacency.csv file is in the same directory as the program
+(you can change the path in the readcounties function)
+"""
+
+#imports
 import requests
 
 # variables for the program
@@ -84,6 +90,7 @@ def setCordinateForcounties():
 
 # read the counties from the countiesLatLen list, create the counties and add the neighbours to the counties
 def readcounties():
+    """ please make sure that the adjacency.csv file is in the same directory as the program"""
     with open('adjacency.csv', 'r') as file:
         for line in file:
             firstCountyName = line.split(',')[0].split('"')[1]
