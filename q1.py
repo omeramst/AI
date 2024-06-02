@@ -5,9 +5,10 @@ please make sure that the adjacency.csv file is in the same directory as the pro
 (you can change the path in the readcounties function)
 """
 
-#imports
+# imports
 import requests
 import random
+import math
 
 # variables for the program
 """please change the starting locations and goal locations to test the program with different locations"""
@@ -24,7 +25,7 @@ def __main__():
     # find the max distance between the counties
     print("Max distance between the counties: ", findMaxdistance())
     # lets start the algorithm
-    find_path(starting_locations, goal_locations, 1, True)
+    find_path(starting_locations, goal_locations, 3, False)
 
 
 # class for the county with the name, code, neighbours, heuristic, cost, parent, lat, lon
@@ -176,6 +177,7 @@ def a_star(starting_locations, goal_locations):
     # if the frontier is empty, then at list one path wasn't found
     return pathes
 
+
 # hill climbing algorithm for few starting locations and goal locations
 def hill_climbing(starting_locations, goal_locations, max_iterations=5):
     # initialize the best paths
@@ -218,6 +220,7 @@ def hill_climbing(starting_locations, goal_locations, max_iterations=5):
 
     return best_paths
 
+
 # local beam search algorithm for few starting locations and goal locations
 def local_beam_search(starting_locations, goal_locations, k=3):
     # initialize the beams and bags
@@ -253,6 +256,32 @@ def local_beam_search(starting_locations, goal_locations, k=3):
             bags.append(bag)
     return finished_beams, bags
 
+
+def simulated_annealing(starting_locations, goal_locations):
+    paths = []
+    for start in starting_locations:
+        current = start
+        path = [current]
+        T = 1  # Initial temperature
+        T_min = 1  # Minimum temperature
+        alpha = 0.95  # Cooling rate
+        i = 0
+        while current not in goal_locations and i<100:
+            neighbors = [neighbor for neighbor in current.neighbours if neighbor not in path]
+            if not neighbors:
+                break
+            next_node = random.choice(neighbors)
+            delta_e = heuristic(next_node, goal_locations) - heuristic(current, goal_locations)
+            if delta_e < 0 or random.uniform(0, 1) < math.exp(-delta_e / T):
+                current = next_node
+                path.append(current)
+            T *= alpha
+            i += 1
+        if current in goal_locations:
+            paths.append(path)
+    return paths
+
+
 # find the path for the starting locations and goal locations using the search method and print the pathes
 def find_path(starting_locations, goal_locations, search_method, detail_output):
     # split the starting locations and goal locations by the party
@@ -287,15 +316,19 @@ def find_path(starting_locations, goal_locations, search_method, detail_output):
         # print the pathes
         pathsPrints(bluePaths, redPaths, detail_output)
     elif search_method == 2:
-        #A hill climbing algorithm. It should be restarted 5 times (if it didn’t find the answer), using adjacent states to the original starting point.
+        # A hill climbing algorithm. It should be restarted 5 times (if it didn’t find the answer), using adjacent states to the original starting point.
         bluePaths = hill_climbing(starting_locations_blue, goal_locations_blue)
         redPaths = hill_climbing(starting_locations_red, goal_locations_red)
         # print the pathes
-        pathsPrints(bluePaths, redPaths, detail_output,search_method)
+        pathsPrints(bluePaths, redPaths, detail_output, search_method)
     elif search_method == 3:
-        pass
+        # A simulated annealing algorithm
+        bluePaths = simulated_annealing(starting_locations_blue, goal_locations_blue)
+        redPaths = simulated_annealing(starting_locations_red, goal_locations_red)
+        # print the pathes
+        pathsPrints(bluePaths, redPaths, detail_output, search_method)
     elif search_method == 4:
-        #A local beam search, with the number of beams (k) being 3
+        # A local beam search, with the number of beams (k) being 3
         bluePaths, blueBags = local_beam_search(starting_locations_blue, goal_locations_blue, 3)
         redPaths, redBags = local_beam_search(starting_locations_red, goal_locations_red, 3)
         # print the pathes
@@ -307,11 +340,12 @@ def find_path(starting_locations, goal_locations, search_method, detail_output):
 # print the pathes
 def pathsPrints(bluePaths, redPaths, detail_output, search_method=1):
     # Get the maximum length of the paths
-    max_len_bluePaths = max(len(path) for path in bluePaths)
-    max_len_redPaths = max(len(path) for path in redPaths)
+    max_len_bluePaths = max((len(path) for path in bluePaths), default=0)
+    max_len_redPaths = max((len(path) for path in redPaths), default=0)
     max_length = max(max_len_bluePaths, max_len_redPaths)
 
-    if (not detail_output and search_method == 1) or (not detail_output and search_method == 4) or (search_method == 2):
+    if (not detail_output and search_method == 1) or (not detail_output and search_method == 4) or (
+            search_method == 2) or (not detail_output and search_method == 3):
         # Print the paths
         for i in range(max_length):
             # Initialize the string for the paths
@@ -341,6 +375,16 @@ def pathsPrints(bluePaths, redPaths, detail_output, search_method=1):
 
             # Print the string
             print(PathStr)
+        # Print the number of expanded nodes
+        if max_length== 0:
+            how_many = len(starting_locations) - (len(bluePaths) + len(redPaths))
+            PathStr = "{"
+            # add the empty pathes "no path found" to the string
+            for k in range(how_many):
+                PathStr += "No path found ; "
+            PathStr = PathStr[:-3] + "}"
+            print(PathStr)
+
     elif detail_output and search_method == 1:
         # Initialize the string for the paths
         PathStr = "{"
@@ -382,7 +426,15 @@ def pathsPrints(bluePaths, redPaths, detail_output, search_method=1):
             print(PathStr)
             if detail_output and i == 1:
                 print("Heuristic: " + HeuristicStr)
-
+        # if the max length is 0 then print the empty pathes
+        if max_length== 0:
+            how_many = len(starting_locations) - (len(bluePaths) + len(redPaths))
+            PathStr = "{"
+            # add the empty pathes "no path found" to the string
+            for k in range(how_many):
+                PathStr += "No path found ; "
+            PathStr = PathStr[:-3] + "}"
+            print(PathStr)
 
 # find the county by the name and code from the counties list
 def find_county(name, code):
