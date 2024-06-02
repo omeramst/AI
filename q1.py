@@ -7,6 +7,7 @@ please make sure that the adjacency.csv file is in the same directory as the pro
 
 #imports
 import requests
+import random
 
 # variables for the program
 """please change the starting locations and goal locations to test the program with different locations"""
@@ -175,6 +176,82 @@ def a_star(starting_locations, goal_locations):
     # if the frontier is empty, then at list one path wasn't found
     return pathes
 
+# hill climbing algorithm for few starting locations and goal locations
+def hill_climbing(starting_locations, goal_locations, max_iterations=5):
+    # initialize the best paths
+    best_paths = []
+    # loop for the max iterations
+    for _ in range(max_iterations):
+        current_paths = []
+        # loop for the starting locations
+        for start in starting_locations:
+            current = start
+            path = [current]
+            # loop until the current county is in the goal locations
+            while current not in goal_locations:
+                best_neighbor = None
+                best_heuristic = float('inf')
+                # get the best neighbor for the current county
+                for neighbor in current.neighbours:
+                    if neighbor not in path:
+                        h = heuristic(neighbor, goal_locations)
+                        if h < best_heuristic:
+                            best_neighbor = neighbor
+                            best_heuristic = h
+                # if the best neighbor is None then break the loop
+                if best_neighbor is None:
+                    break
+                # add the best neighbor to the path
+                current = best_neighbor
+                path.append(current)
+            # add the path to the current paths
+            current_paths.append(path)
+        # check if the current paths is better than the best paths
+        if not best_paths or len(current_paths) > len(best_paths):
+            best_paths = current_paths
+        # if all the paths are in the goal locations then break the loop
+        if all(path[-1] in goal_locations for path in best_paths):
+            break
+
+        # Restart from adjacent states of the original starting points
+        starting_locations = [random.choice(start.neighbours) for start in starting_locations]
+
+    return best_paths
+
+# local beam search algorithm for few starting locations and goal locations
+def local_beam_search(starting_locations, goal_locations, k=3):
+    # initialize the beams and bags
+    finished_beams = []
+    bags = []
+    # loop for the starting locations
+    for start in starting_locations:
+        beams = [[start]]
+        # loop until the beams is empty
+        while beams:
+            new_beams = []
+            bag = []
+            # loop for the beams
+            for beam in beams:
+                current = beam[-1]
+                # check if the current county is in the goal locations
+                if current in goal_locations:
+                    finished_beams.append(beam)
+                    break
+                # get the neighbors of the current county
+                neighbors = []
+                for neighbor in current.neighbours:
+                    if neighbor not in beam:
+                        new_beam = beam + [neighbor]
+                        neighbors.append((new_beam, heuristic(neighbor, goal_locations)))
+                # sort the neighbors by the heuristic value and get the top k neighbors
+                neighbors.sort(key=lambda x: x[1])
+                top_k_neighbors = neighbors[:k]
+                new_beams.extend(neighbor[0] for neighbor in top_k_neighbors)
+                bag.append([(neighbor[0][-1].name, neighbor[0][-1].code) for neighbor in top_k_neighbors])
+            # set the new beams and add the bag to the bags
+            beams = new_beams
+            bags.append(bag)
+    return finished_beams, bags
 
 # find the path for the starting locations and goal locations using the search method and print the pathes
 def find_path(starting_locations, goal_locations, search_method, detail_output):
@@ -209,16 +286,32 @@ def find_path(starting_locations, goal_locations, search_method, detail_output):
         redPaths = a_star(starting_locations_red, goal_locations_red)
         # print the pathes
         pathsPrints(bluePaths, redPaths, detail_output)
+    elif search_method == 2:
+        #A hill climbing algorithm. It should be restarted 5 times (if it didn’t find the answer), using adjacent states to the original starting point.
+        bluePaths = hill_climbing(starting_locations_blue, goal_locations_blue)
+        redPaths = hill_climbing(starting_locations_red, goal_locations_red)
+        # print the pathes
+        pathsPrints(bluePaths, redPaths, detail_output,search_method)
+    elif search_method == 3:
+        pass
+    elif search_method == 4:
+        #A local beam search, with the number of beams (k) being 3
+        bluePaths, blueBags = local_beam_search(starting_locations_blue, goal_locations_blue, 3)
+        redPaths, redBags = local_beam_search(starting_locations_red, goal_locations_red, 3)
+        # print the pathes
+        pathsPrints(bluePaths, redPaths, detail_output, search_method)
+    elif search_method == 5:
+        pass
 
 
 # print the pathes
-def pathsPrints(bluePaths, redPaths, detail_output):
+def pathsPrints(bluePaths, redPaths, detail_output, search_method=1):
     # Get the maximum length of the paths
     max_len_bluePaths = max(len(path) for path in bluePaths)
     max_len_redPaths = max(len(path) for path in redPaths)
     max_length = max(max_len_bluePaths, max_len_redPaths)
 
-    if not detail_output:
+    if (not detail_output and search_method == 1) or (not detail_output and search_method == 4) or (search_method == 2):
         # Print the paths
         for i in range(max_length):
             # Initialize the string for the paths
@@ -248,7 +341,7 @@ def pathsPrints(bluePaths, redPaths, detail_output):
 
             # Print the string
             print(PathStr)
-    else:
+    elif detail_output and search_method == 1:
         # Initialize the string for the paths
         PathStr = "{"
         HeuristicStr = "{"
