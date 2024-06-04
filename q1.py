@@ -10,6 +10,7 @@ import requests
 import random
 import math
 
+
 # variables for the program
 """please change the starting locations and goal locations to test the program with different locations"""
 counties = []
@@ -25,7 +26,7 @@ def __main__():
     # find the max distance between the counties
     print("Max distance between the counties: ", findMaxdistance())
     # lets start the algorithm
-    find_path(starting_locations, goal_locations, 3, False)
+    find_path(starting_locations, goal_locations, 5, False)
 
 
 # class for the county with the name, code, neighbours, heuristic, cost, parent, lat, lon
@@ -48,7 +49,9 @@ class County:
 
     # check if the county is equal to another county by the name and code
     def __eq__(self, other):
-        return self.name == other.name and self.code == other.code
+        if isinstance(other, County):
+            return self.name == other.name and self.code == other.code
+        return False
 
     # return the string of the county with the name and code
     def __str__(self):
@@ -71,6 +74,8 @@ def setCordinateForcounties():
                 county.setCordinate(float(line.split(',')[2]), float(line.split(',')[3]))
                 break
         # if the county doesn't have cordinate in the countiesLatLen list then get it from the api
+        #to do that please remove the comments from the code below and comment the code above
+        """
         else:
             headers = {
                 'User-Agent': 'Omer Ai 1.0',
@@ -88,6 +93,7 @@ def setCordinateForcounties():
                             county.lon))
             except:
                 pass
+                """
 
 
 # read the counties from the countiesLatLen list, create the counties and add the neighbours to the counties
@@ -334,7 +340,11 @@ def find_path(starting_locations, goal_locations, search_method, detail_output):
         # print the pathes
         pathsPrints(bluePaths, redPaths, detail_output, search_method)
     elif search_method == 5:
-        pass
+        # A genetic algorithm
+        bluePaths = genetic_algorithm(starting_locations_blue, goal_locations_blue)
+        redPaths = genetic_algorithm(starting_locations_red, goal_locations_red)
+        # print the pathes
+        pathsPrints(bluePaths, redPaths, detail_output, search_method)
 
 
 # print the pathes
@@ -345,7 +355,7 @@ def pathsPrints(bluePaths, redPaths, detail_output, search_method=1):
     max_length = max(max_len_bluePaths, max_len_redPaths)
 
     if (not detail_output and search_method == 1) or (not detail_output and search_method == 4) or (
-            search_method == 2) or (not detail_output and search_method == 3):
+            search_method == 2) or (not detail_output and search_method == 3) or (not detail_output and search_method == 5):
         # Print the paths
         for i in range(max_length):
             # Initialize the string for the paths
@@ -455,6 +465,144 @@ def findMaxdistance():
             if distance > max_distance:
                 max_distance = distance
     return max_distance
+
+"""genetic algorithm for few starting locations and goal locations"""
+
+
+def genetic_algorithm(starting_locations, goal_locations, population_size=10, max_generations=100):
+    best_paths = []
+    for start in starting_locations:
+        population = initialize_population([start], goal_locations, population_size)
+
+        for generation in range(max_generations):
+            fitness_scores = evaluate_fitness(population, [start], goal_locations)
+            parents = selection(population, fitness_scores)
+            offspring = crossover(parents)
+            offspring = mutation(offspring)
+            population = replacement(population, offspring)
+
+        best_path = find_best_path(population, goal_locations, [start])
+        if best_path[0][-1] in goal_locations:
+            best_paths.append(best_path[0])
+
+    return best_paths
+
+
+def initialize_population(starting_locations, goal_locations, population_size):
+    population = []
+    for _ in range(population_size):
+        paths = []
+        for start in starting_locations:
+            path = generate_random_path(start, goal_locations)
+            paths.append(path)
+        population.append(paths)
+    return population
+
+
+def generate_random_path(start, goals, max_length=100):
+    path = [start]
+    current = start
+
+    while current not in goals and len(path) < max_length:
+        neighbors = current.neighbours
+        valid_neighbors = [neighbor for neighbor in neighbors if neighbor not in path]
+
+        if not valid_neighbors:
+            break
+
+        next_county = random.choice(valid_neighbors)
+        path.append(next_county)
+        current = next_county
+
+    return path
+
+
+def evaluate_fitness(population, starting_locations, goal_locations):
+    fitness_scores = []
+    for paths in population:
+        total_distance = 0
+        for path in paths:
+            # calculate the total distance of the path and add it to the total distance
+            total_distance += calculate_path_distance(path)
+            # check if the path is valid (start and end in the correct locations)
+            if path[-1] not in goal_locations:
+                total_distance = 0
+                break
+            if path[0] not in starting_locations:
+                total_distance =0
+                break
+            # check if the path is valid
+            for i in range(len(path) - 1):
+                if path[i + 1] not in path[i].neighbours:
+                    total_distance = 0
+                    break
+        if total_distance == 0:
+            fitness_scores.append(0)
+        else:
+            fitness_scores.append(1 / total_distance)
+    return fitness_scores
+
+
+def selection(population, fitness_scores, tournament_size=5):
+    selected_parents = []
+    for _ in range(len(population)):
+        tournament = random.sample(range(len(population)), tournament_size)
+        tournament_fitness = [fitness_scores[i] for i in tournament]
+        winner_index = tournament[tournament_fitness.index(max(tournament_fitness))]
+        selected_parents.append(population[winner_index])
+    return selected_parents
+
+
+def crossover(parents):
+    offspring = []
+    for i in range(0, len(parents), 2):
+        parent1 = parents[i]
+        parent2 = parents[i + 1]
+        if min(len(parent1), len(parent2)) > 1:
+            crossover_point = random.randint(1, min(len(parent1), len(parent2)) - 1)
+        else:
+            crossover_point = 1
+        offspring1 = parent1[:crossover_point] + parent2[crossover_point:]
+        offspring2 = parent2[:crossover_point] + parent1[crossover_point:]
+        offspring.extend([offspring1, offspring2])
+    return offspring
+
+
+def mutation(offspring, mutation_rate=0.1):
+    for path in offspring:
+        if random.random() < mutation_rate:
+            mutation_point = random.randint(0, len(path) - 1)
+            if mutation_point !=0:
+                path[0][mutation_point] = random.choice(path[0][mutation_point].neighbours)
+    return offspring
+
+
+def replacement(population, offspring):
+    new_population = population + offspring
+    #sorting the new population by the fitness score
+    new_population.sort(key=lambda x: evaluate_fitness([x], [x[0]], [x[-1]])[0], reverse=True)
+    return new_population[:len(population)]
+
+
+def find_best_path(population, goal_locations, starting_locations):
+    best_fitness = float('-inf')
+    best_path = None
+    for paths in population:
+        fitness = evaluate_fitness([paths], starting_locations, goal_locations)[0]
+        if fitness > best_fitness:
+            best_fitness = fitness
+            best_path = paths
+    return best_path
+
+
+def calculate_path_distance(path):
+    total_distance = 0
+    for i in range(len(path) - 1):
+        county1 = path[i]
+        county2 = path[i + 1]
+        if county2 in county1.neighbours:
+            total_distance += 356  # Assuming a fixed distance between adjacent counties
+    return total_distance
 
 
 countiesLatLen = ["Autauga County,AL,32.5165255,-86.6319403",
