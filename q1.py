@@ -26,7 +26,7 @@ def __main__():
     # find the max distance between the counties
     print("Max distance between the counties: ", findMaxdistance())
     # lets start the algorithm
-    find_path(starting_locations, goal_locations, 5, False)
+    find_path(starting_locations, goal_locations, 3, True)
 
 
 # class for the county with the name, code, neighbours, heuristic, cost, parent, lat, lon
@@ -265,10 +265,13 @@ def local_beam_search(starting_locations, goal_locations, k=3):
 
 def simulated_annealing(starting_locations, goal_locations):
     paths = []
+    more_info_per_path = []
     for start in starting_locations:
+        print('new start')
         current = start
         path = [current]
-        T = 1  # Initial temperature
+        more_info = []
+        T = 5  # Initial temperature
         T_min = 1  # Minimum temperature
         alpha = 0.95  # Cooling rate
         i = 0
@@ -281,11 +284,17 @@ def simulated_annealing(starting_locations, goal_locations):
             if delta_e < 0 or random.uniform(0, 1) < math.exp(-delta_e / T):
                 current = next_node
                 path.append(current)
-            T *= alpha
+                if delta_e < 0:
+                      more_info.append(f'{current.name}, {current.code}, delta_e: {delta_e}')
+                else:
+                    more_info.append(f'{current.name}, {current.code}, delta_e: {delta_e}, math.exp(-delta_e / T): {math.exp(-delta_e / T)}')
+            if T > T_min:
+                T *= alpha
             i += 1
         if current in goal_locations:
             paths.append(path)
-    return paths
+            more_info_per_path.append(more_info)
+    return paths , more_info_per_path
 
 
 # find the path for the starting locations and goal locations using the search method and print the pathes
@@ -329,10 +338,10 @@ def find_path(starting_locations, goal_locations, search_method, detail_output):
         pathsPrints(bluePaths, redPaths, detail_output, search_method)
     elif search_method == 3:
         # A simulated annealing algorithm
-        bluePaths = simulated_annealing(starting_locations_blue, goal_locations_blue)
-        redPaths = simulated_annealing(starting_locations_red, goal_locations_red)
+        bluePaths, bluePathsBags = simulated_annealing(starting_locations_blue, goal_locations_blue)
+        redPaths, redPathsBags = simulated_annealing(starting_locations_red, goal_locations_red)
         # print the pathes
-        pathsPrints(bluePaths, redPaths, detail_output, search_method)
+        pathsPrints(bluePaths, redPaths, detail_output, search_method, bluePathsBags , redPathsBags)
     elif search_method == 4:
         # A local beam search, with the number of beams (k) being 3
         bluePaths, blueBags = local_beam_search(starting_locations_blue, goal_locations_blue, 3)
@@ -348,7 +357,7 @@ def find_path(starting_locations, goal_locations, search_method, detail_output):
 
 
 # print the pathes
-def pathsPrints(bluePaths, redPaths, detail_output, search_method=1):
+def pathsPrints(bluePaths, redPaths, detail_output, search_method=1 ,bluePathsBags = None, redPathsBags = None):
     # Get the maximum length of the paths
     max_len_bluePaths = max((len(path) for path in bluePaths), default=0)
     max_len_redPaths = max((len(path) for path in redPaths), default=0)
@@ -445,6 +454,58 @@ def pathsPrints(bluePaths, redPaths, detail_output, search_method=1):
                 PathStr += "No path found ; "
             PathStr = PathStr[:-3] + "}"
             print(PathStr)
+
+    elif detail_output and (search_method == 3 or search_method == 4 or search_method == 5):
+        # Initialize the string for the paths
+        PathStr = "{"
+        infostr = "{"
+        # add the heuristic values to the string
+        for info in bluePathsBags:
+            infostr += str(info[0]) + " ; "
+        for path in redPathsBags:
+            infostr += str(path[0]) + " ; "
+
+        # Print the paths
+        for i in range(max_length):
+            # Initialize the string for the paths
+            PathStr = "{"
+
+            # Add the counties to the string
+            for path in bluePaths:
+                if i < len(path):
+                    PathStr += path[i].name + ", " + path[i].code + " (B) ; "
+                else:
+                    PathStr += path[-1].name + ", " + path[-1].code + " (B) ; "
+            for path in redPaths:
+                if i < len(path):
+                    PathStr += path[i].name + ", " + path[i].code + " (R) ; "
+                else:
+                    PathStr += path[-1].name + ", " + path[-1].code + " (R) ; "
+
+            if len(starting_locations) != len(bluePaths) + len(redPaths):
+                how_many = len(starting_locations) - (len(bluePaths) + len(redPaths))
+                # add the empty pathes "no path found" to the string
+                for k in range(how_many):
+                    PathStr += "No path found ; "
+
+            # Remove the last semicolon and space from the strings
+            PathStr = PathStr[:-3] + "}"
+            infostr = infostr[:-3] + "}"
+
+            # Print the strings
+            print(PathStr)
+            if detail_output and i == 1:
+                print("info: " + infostr)
+        # if the max length is 0 then print the empty pathes
+        if max_length == 0:
+            how_many = len(starting_locations) - (len(bluePaths) + len(redPaths))
+            PathStr = "{"
+            # add the empty pathes "no path found" to the string
+            for k in range(how_many):
+                PathStr += "No path found ; "
+            PathStr = PathStr[:-3] + "}"
+            print(PathStr)
+
 
 # find the county by the name and code from the counties list
 def find_county(name, code):
@@ -589,7 +650,7 @@ def find_best_path(population, goal_locations, starting_locations):
     best_path = None
     for paths in population:
         fitness = evaluate_fitness([paths], starting_locations, goal_locations)[0]
-        if fitness > best_fitness:
+        if fitness > best_fitness and fitness > 0:
             best_fitness = fitness
             best_path = paths
     return best_path
