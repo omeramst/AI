@@ -10,7 +10,6 @@ import requests
 import random
 import math
 
-
 # variables for the program
 """please change the starting locations and goal locations to test the program with different locations"""
 counties = []
@@ -74,7 +73,7 @@ def setCordinateForcounties():
                 county.setCordinate(float(line.split(',')[2]), float(line.split(',')[3]))
                 break
         # if the county doesn't have cordinate in the countiesLatLen list then get it from the api
-        #to do that please remove the comments from the code below and comment the code above
+        # to do that please remove the comments from the code below and comment the code above
         """
         else:
             headers = {
@@ -267,15 +266,15 @@ def simulated_annealing(starting_locations, goal_locations):
     paths = []
     more_info_per_path = []
     for start in starting_locations:
-        print('new start')
         current = start
         path = [current]
         more_info = []
-        T = 5  # Initial temperature
-        T_min = 1  # Minimum temperature
+        T = 1  # Initial temperature
+        T_min = 0  # Minimum temperature
         alpha = 0.95  # Cooling rate
         i = 0
-        while current not in goal_locations and i<100:
+        #print('start')
+        while current not in goal_locations and i < 100:
             neighbors = [neighbor for neighbor in current.neighbours if neighbor not in path]
             if not neighbors:
                 break
@@ -285,16 +284,22 @@ def simulated_annealing(starting_locations, goal_locations):
                 current = next_node
                 path.append(current)
                 if delta_e < 0:
-                      more_info.append(f'{current.name}, {current.code}, delta_e: {delta_e}')
-                else:
-                    more_info.append(f'{current.name}, {current.code}, delta_e: {delta_e}, math.exp(-delta_e / T): {math.exp(-delta_e / T)}')
+                    #print('we were lucky')
+                    more_info.append(
+                        f'{current.name}, {current.code}, delta_e: {delta_e} ,delta_e < 0 so 100% chance to choose it')
+            else:
+                more_info.append(
+                    f'{current.name}, {current.code}, delta_e: {delta_e}, math.exp(-delta_e / T): {math.exp(-delta_e / T)}')
+                #print(f'delta e {delta_e} ,t {T}')
+                #print(math.exp(-delta_e / T))
             if T > T_min:
                 T *= alpha
             i += 1
-        if current in goal_locations:
-            paths.append(path)
-            more_info_per_path.append(more_info)
-    return paths , more_info_per_path
+    if current in goal_locations:
+        paths.append(path)
+        more_info_per_path.append(more_info)
+
+    return paths, more_info_per_path
 
 
 # find the path for the starting locations and goal locations using the search method and print the pathes
@@ -341,7 +346,7 @@ def find_path(starting_locations, goal_locations, search_method, detail_output):
         bluePaths, bluePathsBags = simulated_annealing(starting_locations_blue, goal_locations_blue)
         redPaths, redPathsBags = simulated_annealing(starting_locations_red, goal_locations_red)
         # print the pathes
-        pathsPrints(bluePaths, redPaths, detail_output, search_method, bluePathsBags , redPathsBags)
+        pathsPrints(bluePaths, redPaths, detail_output, search_method, bluePathsBags, redPathsBags)
     elif search_method == 4:
         # A local beam search, with the number of beams (k) being 3
         bluePaths, blueBags = local_beam_search(starting_locations_blue, goal_locations_blue, 3)
@@ -357,14 +362,15 @@ def find_path(starting_locations, goal_locations, search_method, detail_output):
 
 
 # print the pathes
-def pathsPrints(bluePaths, redPaths, detail_output, search_method=1 ,bluePathsBags = None, redPathsBags = None):
+def pathsPrints(bluePaths, redPaths, detail_output, search_method=1, bluePathsBags=None, redPathsBags=None):
     # Get the maximum length of the paths
     max_len_bluePaths = max((len(path) for path in bluePaths), default=0)
     max_len_redPaths = max((len(path) for path in redPaths), default=0)
     max_length = max(max_len_bluePaths, max_len_redPaths)
 
     if (not detail_output and search_method == 1) or (not detail_output and search_method == 4) or (
-            search_method == 2) or (not detail_output and search_method == 3) or (not detail_output and search_method == 5):
+            search_method == 2) or (not detail_output and search_method == 3) or (
+            not detail_output and search_method == 5):
         # Print the paths
         for i in range(max_length):
             # Initialize the string for the paths
@@ -395,7 +401,7 @@ def pathsPrints(bluePaths, redPaths, detail_output, search_method=1 ,bluePathsBa
             # Print the string
             print(PathStr)
         # Print the number of expanded nodes
-        if max_length== 0:
+        if max_length == 0:
             how_many = len(starting_locations) - (len(bluePaths) + len(redPaths))
             PathStr = "{"
             # add the empty pathes "no path found" to the string
@@ -446,7 +452,7 @@ def pathsPrints(bluePaths, redPaths, detail_output, search_method=1 ,bluePathsBa
             if detail_output and i == 1:
                 print("Heuristic: " + HeuristicStr)
         # if the max length is 0 then print the empty pathes
-        if max_length== 0:
+        if max_length == 0:
             how_many = len(starting_locations) - (len(bluePaths) + len(redPaths))
             PathStr = "{"
             # add the empty pathes "no path found" to the string
@@ -527,6 +533,7 @@ def findMaxdistance():
                 max_distance = distance
     return max_distance
 
+
 """genetic algorithm for few starting locations and goal locations"""
 
 
@@ -590,7 +597,7 @@ def evaluate_fitness(population, starting_locations, goal_locations):
                 total_distance = 0
                 break
             if path[0] not in starting_locations:
-                total_distance =0
+                total_distance = 0
                 break
             # check if the path is valid
             for i in range(len(path) - 1):
@@ -633,14 +640,14 @@ def mutation(offspring, mutation_rate=0.1):
     for path in offspring:
         if random.random() < mutation_rate:
             mutation_point = random.randint(0, len(path) - 1)
-            if mutation_point !=0:
+            if mutation_point != 0:
                 path[0][mutation_point] = random.choice(path[0][mutation_point].neighbours)
     return offspring
 
 
 def replacement(population, offspring):
     new_population = population + offspring
-    #sorting the new population by the fitness score
+    # sorting the new population by the fitness score
     new_population.sort(key=lambda x: evaluate_fitness([x], [x[0]], [x[-1]])[0], reverse=True)
     return new_population[:len(population)]
 
