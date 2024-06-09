@@ -23,9 +23,9 @@ def __main__():
     # read the counties from the file
     readcounties()
     # find the max distance between the counties
-    print("Max distance between the counties: ", findMaxdistance())
+    # print("Max distance between the counties: ", findMaxdistance())
     # lets start the algorithm
-    find_path(starting_locations, goal_locations, 3, True)
+    find_path(starting_locations, goal_locations, 4, True)
 
 
 # class for the county with the name, code, neighbours, heuristic, cost, parent, lat, lon
@@ -234,16 +234,17 @@ def local_beam_search(starting_locations, goal_locations, k=3):
     # loop for the starting locations
     for start in starting_locations:
         beams = [[start]]
-        # loop until the beams is empty
+        bag = []
+        # loop until the beams is empty or the goal locations is found
         while beams:
             new_beams = []
-            bag = []
             # loop for the beams
             for beam in beams:
                 current = beam[-1]
                 # check if the current county is in the goal locations
                 if current in goal_locations:
                     finished_beams.append(beam)
+                    bags.append(bag)
                     break
                 # get the neighbors of the current county
                 neighbors = []
@@ -255,10 +256,11 @@ def local_beam_search(starting_locations, goal_locations, k=3):
                 neighbors.sort(key=lambda x: x[1])
                 top_k_neighbors = neighbors[:k]
                 new_beams.extend(neighbor[0] for neighbor in top_k_neighbors)
-                bag.append([(neighbor[0][-1].name, neighbor[0][-1].code) for neighbor in top_k_neighbors])
+                # add to the bag the most k promising neighbors and their heuristic values
+                bag.append([(neighbor[0][-1].name, neighbor[0][-1].code, neighbor[1]) for neighbor in top_k_neighbors])
             # set the new beams and add the bag to the bags
             beams = new_beams
-            bags.append(bag)
+
     return finished_beams, bags
 
 
@@ -273,7 +275,6 @@ def simulated_annealing(starting_locations, goal_locations):
         T_min = 0  # Minimum temperature
         alpha = 0.95  # Cooling rate
         i = 0
-        #print('start')
         while current not in goal_locations and i < 100:
             neighbors = [neighbor for neighbor in current.neighbours if neighbor not in path]
             if not neighbors:
@@ -284,14 +285,11 @@ def simulated_annealing(starting_locations, goal_locations):
                 current = next_node
                 path.append(current)
                 if delta_e < 0:
-                    #print('we were lucky')
                     more_info.append(
                         f'{current.name}, {current.code}, delta_e: {delta_e} ,delta_e < 0 so 100% chance to choose it')
             else:
                 more_info.append(
                     f'{current.name}, {current.code}, delta_e: {delta_e}, math.exp(-delta_e / T): {math.exp(-delta_e / T)}')
-                #print(f'delta e {delta_e} ,t {T}')
-                #print(math.exp(-delta_e / T))
             if T > T_min:
                 T *= alpha
             i += 1
@@ -349,16 +347,16 @@ def find_path(starting_locations, goal_locations, search_method, detail_output):
         pathsPrints(bluePaths, redPaths, detail_output, search_method, bluePathsBags, redPathsBags)
     elif search_method == 4:
         # A local beam search, with the number of beams (k) being 3
-        bluePaths, blueBags = local_beam_search(starting_locations_blue, goal_locations_blue, 3)
-        redPaths, redBags = local_beam_search(starting_locations_red, goal_locations_red, 3)
+        bluePaths, bluePathsBags = local_beam_search(starting_locations_blue, goal_locations_blue, 3)
+        redPaths, redPathsBags = local_beam_search(starting_locations_red, goal_locations_red, 3)
         # print the pathes
-        pathsPrints(bluePaths, redPaths, detail_output, search_method)
+        pathsPrints(bluePaths, redPaths, detail_output, search_method, bluePathsBags, redPathsBags)
     elif search_method == 5:
         # A genetic algorithm
-        bluePaths = genetic_algorithm(starting_locations_blue, goal_locations_blue)
-        redPaths = genetic_algorithm(starting_locations_red, goal_locations_red)
+        bluePaths, bluePathsBags = genetic_algorithm(starting_locations_blue, goal_locations_blue)
+        redPaths, redPathsBags = genetic_algorithm(starting_locations_red, goal_locations_red)
         # print the pathes
-        pathsPrints(bluePaths, redPaths, detail_output, search_method)
+        pathsPrints(bluePaths, redPaths, detail_output, search_method, bluePathsBags, redPathsBags)
 
 
 # print the pathes
@@ -461,7 +459,7 @@ def pathsPrints(bluePaths, redPaths, detail_output, search_method=1, bluePathsBa
             PathStr = PathStr[:-3] + "}"
             print(PathStr)
 
-    elif detail_output and (search_method == 3 or search_method == 4 or search_method == 5):
+    elif detail_output and (search_method == 3 or search_method == 4):
         # Initialize the string for the paths
         PathStr = "{"
         infostr = "{"
@@ -511,6 +509,55 @@ def pathsPrints(bluePaths, redPaths, detail_output, search_method=1, bluePathsBa
                 PathStr += "No path found ; "
             PathStr = PathStr[:-3] + "}"
             print(PathStr)
+    elif detail_output and search_method == 5:
+        # Initialize the string for the paths
+        PathStr = "{"
+        infostr = "{"
+        # add the heuristic values to the string
+        for info in bluePathsBags:
+            infostr += info + " ; "
+        for info in redPathsBags:
+            infostr += info + " ; "
+
+        # Print the paths
+        for i in range(max_length):
+            # Initialize the string for the paths
+            PathStr = "{"
+
+            # Add the counties to the string
+            for path in bluePaths:
+                if i < len(path):
+                    PathStr += path[i].name + ", " + path[i].code + " (B) ; "
+                else:
+                    PathStr += path[-1].name + ", " + path[-1].code + " (B) ; "
+            for path in redPaths:
+                if i < len(path):
+                    PathStr += path[i].name + ", " + path[i].code + " (R) ; "
+                else:
+                    PathStr += path[-1].name + ", " + path[-1].code + " (R) ; "
+
+            if len(starting_locations) != len(bluePaths) + len(redPaths):
+                how_many = len(starting_locations) - (len(bluePaths) + len(redPaths))
+                # add the empty pathes "no path found" to the string
+                for k in range(how_many):
+                    PathStr += "No path found ; "
+
+            # Remove the last semicolon and space from the strings
+            PathStr = PathStr[:-3] + "}"
+            infostr = infostr[:-3] + "}"
+
+            # Print the strings
+            print(PathStr)
+        print("info: \n" + infostr)
+        # if the max length is 0 then print the empty pathes
+        if max_length == 0:
+            how_many = len(starting_locations) - (len(bluePaths) + len(redPaths))
+            PathStr = "{"
+            # add the empty pathes "no path found" to the string
+            for k in range(how_many):
+                PathStr += "No path found ; "
+            PathStr = PathStr[:-3] + "}"
+            print(PathStr)
 
 
 # find the county by the name and code from the counties list
@@ -539,21 +586,38 @@ def findMaxdistance():
 
 def genetic_algorithm(starting_locations, goal_locations, population_size=10, max_generations=100):
     best_paths = []
+    info = []
     for start in starting_locations:
         population = initialize_population([start], goal_locations, population_size)
-
+        i = 0
         for generation in range(max_generations):
             fitness_scores = evaluate_fitness(population, [start], goal_locations)
             parents = selection(population, fitness_scores)
             offspring = crossover(parents)
             offspring = mutation(offspring)
             population = replacement(population, offspring)
-
+            if i == 0:
+                string = ""
+                for path in population:
+                    # add the path to the string
+                    string += f'path number: {population.index(path) + 1} '
+                    for x in path[0]:
+                        if x == path[0][-1]:
+                            string += str(x)
+                        else:
+                            string += str(x) + ' -> '
+                    string += '\n'
+                info.append(string)
+            i += 1
         best_path = find_best_path(population, goal_locations, [start])
-        if best_path[0][-1] in goal_locations:
-            best_paths.append(best_path[0])
-
-    return best_paths
+        if best_path:
+            if best_path[0][-1] in goal_locations:
+                best_paths.append(best_path[0])
+            else:
+                info.remove(info[-1])
+        else:
+            info.remove(info[-1])
+    return best_paths, info
 
 
 def initialize_population(starting_locations, goal_locations, population_size):
