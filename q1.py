@@ -25,7 +25,7 @@ def __main__():
     # find the max distance between the counties
     # print("Max distance between the counties: ", findMaxdistance())
     # lets start the algorithm
-    find_path(starting_locations, goal_locations, 4, True)
+    find_path(starting_locations, goal_locations, 5, True)
 
 
 # class for the county with the name, code, neighbours, heuristic, cost, parent, lat, lon
@@ -548,7 +548,8 @@ def pathsPrints(bluePaths, redPaths, detail_output, search_method=1, bluePathsBa
 
             # Print the strings
             print(PathStr)
-        print("info: \n" + infostr)
+            if i == 1:
+                print("info: \n" + infostr)
         # if the max length is 0 then print the empty pathes
         if max_length == 0:
             how_many = len(starting_locations) - (len(bluePaths) + len(redPaths))
