@@ -270,11 +270,12 @@ def simulated_annealing(starting_locations, goal_locations):
     for start in starting_locations:
         current = start
         path = [current]
-        more_info = []
+        string = ''
         T = 1  # Initial temperature
         T_min = 0  # Minimum temperature
         alpha = 0.95  # Cooling rate
         i = 0
+        step = 0
         while current not in goal_locations and i < 100:
             neighbors = [neighbor for neighbor in current.neighbours if neighbor not in path]
             if not neighbors:
@@ -284,18 +285,23 @@ def simulated_annealing(starting_locations, goal_locations):
             if delta_e < 0 or random.uniform(0, 1) < math.exp(-delta_e / T):
                 current = next_node
                 path.append(current)
+                if step == 0:
+                    if delta_e < 0:
+                        string+= f'{current.name}, {current.code}, delta_e: {delta_e} ,delta_e < 0 so 100% chance to choose it'
+                    else:
+                        string += f'{current.name}, {current.code}, delta_e: {delta_e}, math.exp(-delta_e / T): {math.exp(-delta_e / T)}'
+                step += 1
+            if step == 0:
                 if delta_e < 0:
-                    more_info.append(
-                        f'{current.name}, {current.code}, delta_e: {delta_e} ,delta_e < 0 so 100% chance to choose it')
-            else:
-                more_info.append(
-                    f'{current.name}, {current.code}, delta_e: {delta_e}, math.exp(-delta_e / T): {math.exp(-delta_e / T)}')
+                    string += f'{current.name}, {current.code}, delta_e: {delta_e} ,delta_e < 0 so 100% chance to choose it'
+                else:
+                    string +=  f'{current.name}, {current.code}, delta_e: {delta_e}, math.exp(-delta_e / T): {math.exp(-delta_e / T)}'
             if T > T_min:
                 T *= alpha
             i += 1
     if current in goal_locations:
         paths.append(path)
-        more_info_per_path.append(more_info)
+        more_info_per_path.append(string)
 
     return paths, more_info_per_path
 
@@ -459,7 +465,7 @@ def pathsPrints(bluePaths, redPaths, detail_output, search_method=1, bluePathsBa
             PathStr = PathStr[:-3] + "}"
             print(PathStr)
 
-    elif detail_output and (search_method == 3 or search_method == 4):
+    elif detail_output and search_method == 4:
         # Initialize the string for the paths
         PathStr = "{"
         infostr = "{"
@@ -509,7 +515,7 @@ def pathsPrints(bluePaths, redPaths, detail_output, search_method=1, bluePathsBa
                 PathStr += "No path found ; "
             PathStr = PathStr[:-3] + "}"
             print(PathStr)
-    elif detail_output and search_method == 5:
+    elif detail_output and (search_method == 5 or search_method == 3):
         # Initialize the string for the paths
         PathStr = "{"
         infostr = "{"
